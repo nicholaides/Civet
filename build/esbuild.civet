@@ -138,7 +138,7 @@ for esm of [false, true]
     outfile: `dist/main.${if esm then 'mjs' else 'js'}`
     plugins: [
       resolveExtensions
-      heraPlugin module: true
+      heraPlugin module: true, loader: 'ts'
       civetPlugin
     ]
     define: unless esm
@@ -170,7 +170,7 @@ build({
   minify
   plugins: [
     resolveExtensions
-    heraPlugin module: true
+    heraPlugin module: true, loader: 'ts'
     civetPlugin
   ]
 }).catch -> process.exit 1
