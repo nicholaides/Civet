@@ -5,7 +5,7 @@
     "coffee"
   ],
   "require": [
-    "@danielx/hera/register",
+    "./register-hera.cjs",
     "./register.js"
   ],
   "reporter": "dot",
