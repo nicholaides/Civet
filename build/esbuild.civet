@@ -6,6 +6,11 @@ civetPlugin := civetUnplugin
   ts: "civet"
   cache: true
   config: null
+civetPluginTypeCheck := civetUnplugin
+  ts: 'civet'
+  cache: true
+  config: null
+  typecheck: true
 civetPluginEmit := civetUnplugin
   ts: 'civet'
   emitDeclaration: true
@@ -139,7 +144,7 @@ for esm of [false, true]
     plugins: [
       resolveExtensions
       heraPlugin module: true, loader: 'ts'
-      civetPlugin
+      civetPluginTypeCheck
     ]
     define: unless esm
       "import.meta.url": '""' // avoid warning; eliminated by `dropLabels`

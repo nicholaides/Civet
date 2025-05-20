@@ -15,6 +15,11 @@ cp types/config.d.ts dist/config.d.mts
 # register-noconfig.js is made from register.js
 sed 's#//NOCONFIG//##g' register.js >register-noconfig.js
 
+# parser.hera
+hera --module --types < source/parser.hera > source/parser.hera.ts
+tsc --declaration --emitDeclarationOnly source/parser.hera.ts || true
+rm source/parser.hera.ts
+
 # normal files
 civet --no-config build/esbuild.civet "$@"
 
