@@ -2,7 +2,7 @@ assert from assert
 path from path
 { parseArgs, makeOutputFilename, type Options, type ParsedArgs } from ../source/cli.civet
 { cli, version } from ../source/cli.civet
-{ writeFile, mkdir, rm, readFile } from fs/promises
+{ writeFile, mkdir, rm, readFile, symlink } from fs/promises
 { tmpdir } from os
 
 function argsParse(args: string | string[], parsed: ParsedArgs): Promise<void>
@@ -878,6 +878,21 @@ describe "CLI --typecheck", ->
     { exitCode, stdErr } := await captureProcess =>
       await cli ['--typecheck', '--no-config', inputFile]
     assert.equal exitCode ?? 0, 0, "valid file typechecks cleanly; stderr: " + stdErr
+
+  it "typechecks an absolute file path through a directory symlink", :any ->
+    @timeout 30000
+    @skip() if process.platform is 'win32'
+
+    tmpDirSymlink := `${tmpDir}-alias-peer`
+    await symlink tmpDir, tmpDirSymlink, 'dir'
+    finally await rm tmpDirSymlink, force: true
+
+    await writeFile 'input.civet', "x: number := 42\n"
+    inputFileThroughDirSymlink := path.join tmpDirSymlink, 'input.civet'
+
+    { exitCode, stdErr } := await captureProcess =>
+      await cli ['--typecheck', '--no-config', inputFileThroughDirSymlink]
+    assert.equal exitCode, 0, "symlinked valid file typechecks cleanly; stderr: " + stdErr
 
   it "reports TypeScript diagnostics for type errors", :any ->
     @timeout 30000
