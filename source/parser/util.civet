@@ -36,7 +36,7 @@ import {
 // Types need to be upfront to allow for TypeScript `asserts`
 assert: {
   <T>(a: T, msg: string): asserts a
-  equal(a: unknown, b: unknown, msg: string): asserts a is b
+  equal(a: unknown, b: unknown, msg: string): asserts a is typeof b
   notEqual(a: unknown, b: unknown, msg: string): void
   notNull<T>(a: T, msg: string): asserts a is NonNullable<T>
 } := Object.assign(
@@ -256,14 +256,20 @@ function isLoopStatement(node: ASTNodeObject): node is IterationStatement
  * Returns the node whose `token` is ",", or else undefined.
  */
 function isComma(node: ASTNode): (ASTLeaf & { token: "," }) | undefined
-  if node?.token is ","
-    node
-  else if Array.isArray(node) and node.-1?.token is ","
-    node.-1
+  astLeaf .= astNodeAsAstLeaf(node)
+  unless astLeaf
+    if [..., last] := node
+      astLeaf = astNodeAsAstLeaf(last)
+
+  if astLeaf is like { token: "," }
+    astLeaf as ASTLeaf & { token: "," }
+
+function astNodeAsAstLeaf(node: ASTNode): ASTLeaf?
+  node if node is like { $loc, type?: undefined }
 
 function stripTrailingImplicitComma(children: ASTNode[])
   last := children.-1
-  if isComma(last) and last.implicit
+  if isComma(last) and last is like { implicit: true }
     children[...-1]
   else
     children
@@ -413,30 +419,34 @@ function literalValue(literal: Literal)
       throw new Error("Unrecognized literal " + JSON.stringify(literal))
 
 /** TypeScript type for given literal */
-function literalType(literal: Literal | RegularExpressionLiteral | TemplateLiteral): TypeNode
-  let t: ASTString
-  switch literal.type
-    when "RegularExpressionLiteral"
-      t = "RegExp"
-    when "TemplateLiteral"
-      t = "string"
-    when "Literal"
-      // Literal.subtype is "NullLiteral" | "BooleanLiteral" | "NumericLiteral"
-      // | "StringLiteral" | "RegularExpressionLiteral".  The sole caller
-      // typeOfExpression filters NullLiteral and never passes a Literal whose
-      // subtype is RegularExpressionLiteral (those arrive with type
-      // "RegularExpressionLiteral" and are handled above), so only the three
-      // cases below are reachable.
-      switch literal.subtype
-        when "BooleanLiteral"
-          t = "boolean"
-        when "NumericLiteral"
-          if literal.raw.endsWith 'n'
-            t = "bigint"
-          else
-            t = "number"
-        when "StringLiteral"
-          t = "string"
+function literalType(literal:
+  (Literal & { subtype: Exclude<Literal."subtype", "NullLiteral" | "RegularExpressionLiteral"> })
+  | RegularExpressionLiteral
+  | TemplateLiteral
+): TypeNode
+  t: ASTString :=
+    switch literal.type
+      when "RegularExpressionLiteral"
+        "RegExp"
+      when "TemplateLiteral"
+        "string"
+      when "Literal"
+        // Literal.subtype is "NullLiteral" | "BooleanLiteral" | "NumericLiteral"
+        // | "StringLiteral" | "RegularExpressionLiteral".  The sole caller
+        // typeOfExpression filters NullLiteral and never passes a Literal whose
+        // subtype is RegularExpressionLiteral (those arrive with type
+        // "RegularExpressionLiteral" and are handled above), so only the three
+        // cases below are reachable.
+        switch literal.subtype
+          when "BooleanLiteral"
+            "boolean"
+          when "NumericLiteral"
+            if literal.raw.endsWith 'n'
+              "bigint"
+            else
+              "number"
+          when "StringLiteral"
+            "string"
   {}
     type: "TypeLiteral"
     t
@@ -457,8 +467,11 @@ function typeOfExpression(expression: ASTNode): TypeNode?
         when "NullLiteral"
           // `let x = null` doesn't infer type for `x`
           return
+        when "RegularExpressionLiteral"
+          // the comment above in funtion literalType() claims this is impossible but the types disagree
+          assert false, "expression.subtype should not be RegularExpressionLiteral"
         else
-          t = literalType expression
+          t = literalType expression as typeof expression & { subtype: typeof expression.subtype }
     when "RegularExpressionLiteral", "TemplateLiteral"
       t = literalType expression
     when "Identifier"
@@ -676,9 +689,9 @@ function makeLeftHandSideExpression(expression: ASTNode)
   while [ item ] := expression
     expression = item
   if isASTNodeObject expression
-    return expression if expression.token
-    return expression if expression.parenthesized
-    return expression if skipParens.has expression.type
+    return expression if "token" in expression and expression.token
+    return expression if "parenthesized" in expression
+    return expression if expression.type? and skipParens.has expression.type
     // `new Foo` and `new Foo.Bar` need parenthesization;
     // `new Foo(args)` does not
     return expression if expression.type is "NewExpression" and
@@ -812,7 +825,7 @@ const typeNeedsNoParens = new Set [
  * Parenthesize type if it might need it in some contexts.
  */
 function parenthesizeType(type: ASTNode)
-  return type if typeNeedsNoParens.has type.type
+  return type if type?.type? && typeNeedsNoParens.has type?.type
   makeNode
     type: "TypeParenthesized"
     ts: true
@@ -876,7 +889,6 @@ function wrapIIFE(expressions: StatementTuple[], asyncFlag?: boolean, generatorS
       type: "FunctionExpression"
       signature
       parameters
-      returnType: undefined
       async
       block
       generator
@@ -887,7 +899,6 @@ function wrapIIFE(expressions: StatementTuple[], asyncFlag?: boolean, generatorS
       type: "ArrowFunction"
       signature
       parameters
-      returnType: undefined
       async
       block
       children: [ ...signature.children, "=>", block ]

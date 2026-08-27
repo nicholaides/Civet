@@ -163,6 +163,7 @@ import type {
   OperatorImportSpecifier,
   OperatorSignature,
   Parameter,
+  ParametersNode,
   ParenthesizedExpression,
   PatternClause,
   PinPattern,
@@ -183,6 +184,7 @@ import type {
   TypeCondition,
   TypeDeclaration,
   TypeArgument,
+  TypeArguments,
   TypeArgumentList,
   TypeFunction,
   TypeNode,
@@ -9585,9 +9587,9 @@ NestedTypeElement
 
 # NOTE: Nested bulleted tuple starts with an indentation.
 NestedTypeBulletedTuple ::TypeTuple
-  ( InsertSpace InsertOpenBracket ):open PushIndent NestedTypeBullet*:content InsertCloseBracket:close PopIndent ->
-    return $skip unless content#
-    content = content.flat() // combine bullets into one array
+  ( InsertSpace InsertOpenBracket ):open PushIndent NestedTypeBullet*:nestedContent InsertCloseBracket:close PopIndent ->
+    return $skip unless nestedContent#
+    content := nestedContent.flat() // combine bullets into one array
 
     // Remove implicit comma from last element
     // NOTE: TypeElementList always returns arrays of objects (TypeElement /

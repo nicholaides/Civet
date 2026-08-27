@@ -1379,6 +1379,7 @@ export type ArrowFunction = ASTParent &
   ref?: ASTRef
   /** Syntactic occurrences of `ref`; absent for synthetic refs. */
   placeholders?: Placeholder[]
+  parenthesized: true
 
 export type AmpersandFunction = ArrowFunction &
   ref: ASTRef

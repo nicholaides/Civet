@@ -17,6 +17,8 @@ type {
   ThrowStatement
   UnaryOpElement
   UnwrappedExpression
+  NewExpression
+  CallExpression
 } from ./types.civet
 { gatherRecursiveAll } from ./traversal.civet
 {
@@ -43,12 +45,12 @@ type ExprWithComments
   leadingComment: ASTNode
   trailingComment: ASTNode
 
-function constructInvocation(fn: ExprWithComments, arg: ASTNode!)
+function constructInvocation(fn: ExprWithComments, arg: ASTNode!): NewExpression | CallExpression | UnwrappedExpression
   // Unwrap ampersand blocks
   expr .= fn.expr
   while expr.type is "ParenthesizedExpression"
     expr = expr.expression
-  if expr.ampersandBlock
+  if "ampersandBlock" in expr and expr.ampersandBlock
     { ref, body, placeholders } := expr as AmpersandFunction
 
     (ref as { type: "Ref" | "PipedExpression" }).type = "PipedExpression"

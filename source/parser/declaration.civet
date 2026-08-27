@@ -394,7 +394,7 @@ function processDeclarationConditionStatement(s: IfStatement | IterationStatemen
     if conditions#
       children .= condition.children
       // For negated conditions, put conditions inside the negation
-      if s.negated
+      if "negated" in s and s.negated
         assert
           condition.expression is like {
             type: 'UnaryExpression'
@@ -412,7 +412,8 @@ function processDeclarationConditionStatement(s: IfStatement | IterationStatemen
   // Move declaration to after the statement for until loops,
   // and for unless conditions with a guaranteed exit in the then clause.
   { blockPrefix } := condition.expression
-  if s.negated and blockPrefix and
+  if "negated" in s and s.negated and
+    blockPrefix and
     (s.type is "IfStatement" and isExit(s.then) or
     s.type is "IterationStatement")
 
@@ -476,7 +477,7 @@ function processDeclarationConditionStatement(s: IfStatement | IterationStatemen
       // Only add a declaration when a temp ref was needed (non-simple initializer).
       // For simple initializers (literals, identifiers), blockPrefix already has
       // the full declaration; adding a declStatement would produce invalid JS like `let 0;`.
-      if not statementDeclaration and condition.expression.hoistDec
+      if not statementDeclaration and "hoistDec" in condition.expression and condition.expression.hoistDec
         declStatement: StatementTuple := ["", [{
           type: "Declaration",
           children: ["let ", ...condition.expression.children],
@@ -728,6 +729,7 @@ function dynamizeImportDeclarationExpression($0: [ASTNode, Whitespace, ASTNode, 
       parenthesizeExpression awaitExpression
     when "Declaration" // named imports
       object := convertNamedImportsToObject imports
+      assert object.type is "ObjectExpression", "convertNamedImportsToObject should have returned and ObjectExpression"
       processCallMemberExpression
         type: "CallExpression"
         children: []

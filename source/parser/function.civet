@@ -30,6 +30,7 @@ import type {
   Parameter
   ParametersNode
   PostRestBindingElements
+  ReturnStatement
   ReturnTypeAnnotation
   StatementTuple
   SwitchStatement
@@ -255,7 +256,7 @@ function processReturnValue(func: FunctionNode)
     declaration ??= child if ancestor  // remember binding
 
   // Compute default return type
-  returnType: ReturnTypeAnnotation? .= func.returnType ?? func.signature?.returnType
+  returnType: ReturnTypeAnnotation? .= func.signature?.returnType
   if returnType
     { t } := returnType
     switch t.type
@@ -283,7 +284,7 @@ function processReturnValue(func: FunctionNode)
 
   // Modify existing declaration, or add declaration of return.value after {
   if declaration
-    unless declaration.typeSuffix?
+    unless "typeSuffix" in declaration and declaration.typeSuffix?
       declaration.children![1] = declaration.typeSuffix = returnType
   else
     block.expressions.unshift [
@@ -298,9 +299,10 @@ function processReturnValue(func: FunctionNode)
   // Transform existing `return` -> `return ret`
   gatherRecursiveWithinFunction block,
     (r) => r.type is "ReturnStatement" and not r.expression
-  .forEach (r) =>
+  |> as ReturnStatement[]
+  |> .forEach (r) =>
     r.expression = ref
-    r.children!.splice -1, 1, " ", ref
+    r.children.splice -1, 1, " ", ref
 
   // Implicit return before }
   unless block.children.-2?.type is "ReturnStatement"
@@ -534,7 +536,7 @@ function assignResults(node: StatementTuple[] | ASTNode, collect: (node: ASTNode
         return
 
   // Insert push wrapping expression
-  parent := node[1]!.parent
+  parent := node[1].parent if node[1] and "parent" in node[1]
   node[1] = collect(node[1])
   updateParentPointers parent if parent?
 
@@ -1156,7 +1158,7 @@ function processParams(f: FunctionNode): void
           // (Currently just handle `@prop ::` individual typing,
           // where parent is AtBindingProperty or BindingElement,
           // or when the parent is the whole Parameter.)
-          typeSuffix := binding.parent?.typeSuffix
+          typeSuffix := binding.parent.typeSuffix if binding.parent? and  "typeSuffix" in binding.parent
           continue unless accessModifier or typeSuffix
           // Remove accessModifier from parameter if we lift it to a field
           if parameter.accessModifier
