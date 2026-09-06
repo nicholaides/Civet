@@ -371,48 +371,44 @@ function elideMatchersFromPropertyBindings(properties: ObjectBindingPatternConte
   for each p of properties
     switch p.type
       when "BindingProperty", "PinProperty"
-        { children, name, value } := p
-        [ws] := children
+        { children^: [ws], name, value } := p
 
-        shouldElide := (and)
-          name.type is "ComputedPropertyName"
-          value and "subtype" in value and value.subtype is "NumericLiteral"
-        if shouldElide
-          continue
+        continue if name.type is "NumericLiteral" and not (value is like { name } and value.name)
+        continue if name.type is "ComputedPropertyName" and value is like { subtype: "NumericLiteral" }
+
+        let contents: (BindingProperty | PinProperty)?
+        switch value?.type
+          when "ArrayBindingPattern", "ObjectBindingPattern"
+            bindings := nonMatcherBindings value
+            contents = {
+              ...p
+              value: bindings
+              children: [ws, propertyKey(name), bindings && ": ", bindings, p.delim]
+            }
+          when "Identifier", undefined
+            contents = p
+          when "NamedBindingPattern"
+            bindings := nonMatcherBindings value.pattern
+            contents = {
+              ...p
+              subbinding: if bindings?.type is like "ArrayBindingPattern", "ObjectBindingPattern", "Identifier"
+                . bindings
+                . " = "
+                . name
+            }
+            // Similar to `simplifyBindingProperties`,
+            // simplify `{name: name}` to just `{name}`
+            // This occurs because the parser expands `{name^: pattern}`
+            // into `{name: name^pattern}`
+            if p.name is value.binding
+              contents!.children = [ws, propertyKey(name), p.delim]
+          else // "Literal", "RegularExpressionLiteral", "StringLiteral"
+            contents = undefined
+
+        if contents
+          contents
         else
-
-          let contents: (BindingProperty | PinProperty)?
-          switch value?.type
-            when "ArrayBindingPattern", "ObjectBindingPattern"
-              bindings := nonMatcherBindings value
-              contents = {
-                ...p
-                value: bindings
-                children: [ws, propertyKey(name), bindings && ": ", bindings, p.delim]
-              }
-            when "Identifier", undefined
-              contents = p
-            when "NamedBindingPattern"
-              bindings := nonMatcherBindings value.pattern
-              contents = {
-                ...p
-                subbinding: if bindings?.type is like "ArrayBindingPattern", "ObjectBindingPattern", "Identifier"
-                  . bindings
-                  . " = "
-                  . name
-              }
-              // Similar to `simplifyBindingProperties`,
-              // simplify `{name: name}` to just `{name}`
-              // This occurs because the parser expands `{name^: pattern}`
-              // into `{name: name^pattern}`
-              if p.name is value.binding
-                contents!.children = [ws, propertyKey(name), p.delim]
-            else // "Literal", "RegularExpressionLiteral", "StringLiteral"
-              contents = undefined
-          if contents
-            contents
-          else
-            continue
+          continue
       else // "BindingRestProperty"
         p
 
