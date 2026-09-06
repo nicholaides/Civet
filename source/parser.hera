@@ -1662,36 +1662,35 @@ FieldDefinition
   # name: (param1, param2) ->
   # name: (param1, param2) => which gets wrapped in bind in constructor
   CoffeeClassesEnabled ClassElementName:id _? Colon __ AssignmentExpression:exp ->
-    assert (exp is like { type }), "AssignmentExpression must exist"
+    if exp is like { type }
+      switch exp.type
+        when "FunctionExpression"
+          return convertFunctionToMethod(id, exp)
+        when "ArrowFunction"
+          return convertArrowFunctionToMethod(id, exp)
 
-    switch exp.type
-      when "FunctionExpression"
-        return convertFunctionToMethod(id, exp)
-      when "ArrowFunction"
-        return convertArrowFunctionToMethod(id, exp)
-      else
-        // CoffeeScript-compatible: `name: value` becomes a prototype
-        // assignment (`Class.prototype.name = value`) lifted out of the
-        // class body in processCoffeeClasses. The empty children make
-        // this entry invisible in the emitted class body.
-        // PrivateIdentifier (`#x`) is JS-only — CoffeeScript has no
-        // private fields — so leave the original class-field semantics
-        // intact rather than emit invalid `Foo.prototype.#x = ...`.
-        // The PrivateIdentifier rule normalises to type "Identifier"
-        // with a `#`-prefixed name, so detect by name prefix.
-        if (id?.name?.startsWith?.("#")) {
-          return {
-            type: "FieldDefinition",
-            id,
-            children: [id, " = ", exp],
-          }
-        }
-        return {
-          type: "CoffeeClassPrototype",
-          id,
-          exp,
-          children: [],
-        }
+    // CoffeeScript-compatible: `name: value` becomes a prototype
+    // assignment (`Class.prototype.name = value`) lifted out of the
+    // class body in processCoffeeClasses. The empty children make
+    // this entry invisible in the emitted class body.
+    // PrivateIdentifier (`#x`) is JS-only — CoffeeScript has no
+    // private fields — so leave the original class-field semantics
+    // intact rather than emit invalid `Foo.prototype.#x = ...`.
+    // The PrivateIdentifier rule normalises to type "Identifier"
+    // with a `#`-prefixed name, so detect by name prefix.
+    if id is like { name } and id.name <? "string" and id.name.startsWith("#")
+      return {
+        type: "FieldDefinition"
+        id
+        children: [id, " = ", exp]
+      }
+
+    return {
+      type: "CoffeeClassPrototype"
+      id
+      exp
+      children: []
+    }
 
   # NOTE: Added readonly semantic equivalent of const field assignment
   InsertReadonly:readonly ClassElementName:id TypeSuffix?:typeSuffix __ ConstAssignment:ca MaybeNestedPostfixedExpressionOrCommaLoop ->
