@@ -2206,6 +2206,52 @@ describe "switch", ->
     """
 
     testCase """
+      numeric property preserves nested array binding
+      ---
+      switch x
+        {0: [a]}
+          a
+      ---
+      function len<T extends readonly unknown[], N extends number>(arr: T, length: N): arr is T & { length: N } { return arr.length === length }
+      if(typeof x === 'object' && x != null && 0 in x && Array.isArray(x[0]) && len(x[0], 1)) {const {0: [a]} = x;
+          a}
+    """
+
+    testCase """
+      numeric-key named literal pattern
+      ---
+      switch x
+        {0: a^1}
+          a
+      ---
+      if(typeof x === 'object' && x != null && 0 in x && x[0] === 1) {const {0: a} = x;
+          a}
+    """
+
+    testCase """
+      numeric-key named array pattern
+      ---
+      switch x
+        {0: a^[b]}
+          b
+      ---
+      function len<T extends readonly unknown[], N extends number>(arr: T, length: N): arr is T & { length: N } { return arr.length === length }
+      if(typeof x === 'object' && x != null && 0 in x && Array.isArray(x[0]) && len(x[0], 1)) {const {0: a} = x, [b] = a;
+          b}
+    """
+
+    testCase """
+      aliased named literal property pattern
+      ---
+      switch x
+        {foo: a^1}
+          a
+      ---
+      if(typeof x === 'object' && x != null && 'foo' in x && x.foo === 1) {const {foo: a} = x;
+          a}
+    """
+
+    testCase """
       named object
       ---
       switch x
