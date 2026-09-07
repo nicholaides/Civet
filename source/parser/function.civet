@@ -32,6 +32,7 @@ import type {
   PostRestBindingElements
   ReturnStatement
   ReturnTypeAnnotation
+  SemicolonDelimiter
   StatementTuple
   SwitchStatement
   ThisType
@@ -978,7 +979,7 @@ function processParams(f: FunctionNode): void
   parameters.parameters.push tt if tt
   parameters.parameters.push ...before
   if rest
-    restIdentifier := (or)
+    restIdentifier: ASTNode := (or)
       rest.binding.ref if "ref" in rest.binding
       rest.binding
     parameters.names.push ...(rest.names ?? [])
@@ -987,7 +988,7 @@ function processParams(f: FunctionNode): void
     // `(a, ...) ->` keeps the rest param to preserve the function's arity in
     // its type, but the synthesized name is unused — `_`-prefix silences TS.
     if rest.binding.type is "EmptyBinding" and not after#
-      restIdentifier.base = restIdentifier.id = "_ref"
+      rest.binding.ref.base = rest.binding.ref.id = "_ref"
 
     if after#  // non-end rest
       if rest.binding.type is like "ArrayBindingPattern", "ObjectBindingPattern", "NamedBindingPattern"
@@ -1014,7 +1015,7 @@ function processParams(f: FunctionNode): void
       } satisfies ArrayBindingPattern
       |> gatherBindingPatternTypeSuffix
       |> as ArrayBindingPattern
-      blockPrefix := parameters.blockPrefix = makeNode {
+      blockPrefix: PostRestBindingElements := parameters.blockPrefix = makeNode {
         type: "PostRestBindingElements"
         children: [
           pattern, " = ", restIdentifier, ".splice(-", after#.toString(), ")"
@@ -1027,7 +1028,7 @@ function processParams(f: FunctionNode): void
       if rest.typeSuffix
         // In TypeScript, use ref for rest parameter to assign correct type
         ref := makeRef "rest"
-        restRef := [
+        restRef: ASTNode := [
           { children: [ ref ], ts: true }
           { children: [ restIdentifier ], js: true }
         ]
@@ -1040,7 +1041,7 @@ function processParams(f: FunctionNode): void
           ]
         bindingIndex := rest.rest.children.indexOf rest.rest.binding
         assert.notEqual bindingIndex, -1, "Could not find binding in rest parameter"
-        binding := { ...rest.rest.binding, js: true }
+        binding := { ...rest.rest.binding, js: true as const }
         rest.rest.children[bindingIndex] = rest.rest.binding = binding
         rest.rest.children.splice bindingIndex+1, 0,
           children: [ ref ]
@@ -1190,7 +1191,7 @@ function processParams(f: FunctionNode): void
           // Only the first definition gets an indent, stolen from fStatement
           fStatement[0] = ""
 
-  delimiter :=
+  delimiter: SemicolonDelimiter :=
     type: "SemicolonDelimiter"
     children: [";"]
 
@@ -1214,7 +1215,7 @@ function processParams(f: FunctionNode): void
     } satisfies Declaration
   prefix ++= thisAssignments
   // Add indentation and delimiters
-  prefix = prefix.map (s) => s is like { js } and s.js
+  prefixStatements: StatementTuple[] := prefix.map (s) => s is like { js } and s.js
     ? ["", makeNode {
       // TODO: figure out how to get JS only statement tuples
       ...s
@@ -1222,12 +1223,12 @@ function processParams(f: FunctionNode): void
     }]
     : [indent, s, delimiter]
 
-  return unless prefix#
+  return unless prefixStatements#
   // In constructor definition, insert prefix after first super() call
   index .= -1
   if isConstructor
     index = findSuperCall block
-  expressions.splice(index + 1, 0, ...prefix)
+  expressions.splice(index + 1, 0, ...prefixStatements)
   updateParentPointers block
   braceBlock block
 

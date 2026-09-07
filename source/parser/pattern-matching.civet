@@ -24,6 +24,7 @@ import {
 } from ./traversal.civet
 
 import {
+  assert
   flatJoin
   isExit
   makeLeftHandSideExpression
@@ -487,6 +488,9 @@ function aggregateDuplicateBindings(bindings: ASTNode)
 
     if key is like { type } and key.type is like "NumericLiteral", "ComputedPropertyName"
       continue
+
+    // Only source-level binding names can be aggregated into a declaration.
+    assert key <? "string", "Expected a binding name"
 
     if propsGroupedByName.has key
       propsGroupedByName.get(key)!.push(p)

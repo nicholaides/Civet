@@ -41,7 +41,8 @@ function createConstLetDecs(statements: any, scopes: Set<any>[], letOrConst: "le
       else if node.type is "FunctionExpression"
         true
     .filter .type is "Declaration"
-    .flatMap .names
+    // The declarations matched above are `var` declarations, which have names.
+    .flatMap .names!
     new Set declarationNames
 
   declaredIdentifiers .= findVarDecs statements

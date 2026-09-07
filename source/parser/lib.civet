@@ -12,6 +12,7 @@ import type {
   ASTLeaf
   ASTNode
   ASTNodeObject
+  ASTNodeParent
   ASTRef
   ASTString
   Binding
@@ -97,6 +98,7 @@ import {
   isComma
   isEmptyBareBlock
   isFunction
+  isParent
   isWhitespaceOrEmpty
   literalValue
   makeLeftHandSideExpression
@@ -214,7 +216,7 @@ import {
 
 function addPostfixStatement(statement: ASTNode, ws: ASTNode, post: IterationStatement | ForStatement | IfStatement)
   blockPrefix := post.blockPrefix if "blockPrefix" in post
-  expressions := [
+  expressions: StatementTuple[] := [
     ...blockPrefix or []
     ["", statement]
   ]
@@ -1348,7 +1350,7 @@ function processAssignments(statements: ASTNode): void
           // in the AST for hoistDec resolution.
           innerBase := makeLeftHandSideExpression (if postfix then baseRef else baseRefAssignment)
           children.splice 0, j, innerBase
-          innerBase.parent = assigned
+          innerBase.parent = assigned as ASTNodeParent
           j = 1  // terminal is now at index 1 after splice
           if postfix
             (baseRefAssignment as ASTNodeObject).parent = exp
@@ -1356,7 +1358,7 @@ function processAssignments(statements: ASTNode): void
 
         // Cache the terminal Index expression if it has side effects
         terminal := children[j]
-        outerTerminal .= terminal
+        outerTerminal: ASTNode .= terminal
         if terminal is like { type: "Index" }
           { ref, refAssignment } := maybeRefAssignment terminal.expression
           if refAssignment
@@ -1373,7 +1375,7 @@ function processAssignments(statements: ASTNode): void
         /* c8 ignore next -- defensive: tests always reach this with either a hoisted refAssignment or a replaced terminal */
         return assigned unless baseRefAssignment or outerTerminal is not terminal
         outerBase := if baseRefAssignment then [baseRef] else children.slice 0, j
-        { ...assigned, children: [...outerBase, outerTerminal, ...children.slice j + 1] }
+        { ...assigned, children: [...outerBase, outerTerminal, ...children.slice j + 1] } as ASTNode
 
     const pre: Children = [], post: Children = []
     switch exp.type
@@ -1620,7 +1622,7 @@ function processAssignments(statements: ASTNode): void
     // Add any additional binding refs that need to be declared to our hoisted declarations
     if refsToDeclare.size
       if exp.hoistDec
-        assert "children" in exp.hoistDec and exp.hoistDec.children, "hoisted declaration must have children"
+        assert isParent(exp.hoistDec), "hoisted declaration must have children"
         exp.hoistDec.children.push [...refsToDeclare].map [",", &]
       else
         exp.hoistDec =

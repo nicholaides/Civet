@@ -6963,11 +6963,11 @@ ExportDeclaration
   Decorators? Export __ Default __ !FunctionDeclaration ( LexicalDeclaration / VariableStatement / TypeAliasDeclaration / NamespaceDeclaration / EnumDeclaration / OperatorDeclaration ):declaration ->
     let id, error
     if declaration.type is "Declaration"
-      names := declaration.names
+      names := declaration.names ?? []
       if names# !== 1
         error = {
           type: "Error",
-          message: `export default with ${names#} variable declaration (should be 1)`
+          message: `export default with ${names#} variable declarations (should be 1)`
         }
       id = names[0]
     else
@@ -8866,7 +8866,7 @@ JSXChildExpression
   Whitespace? LexicalDeclaration:d ->
     decl := d!
     // Add refs from thisAssignments to list of names
-    names .= decl.names.concat(
+    names .= (decl.names ?? []).concat(
       decl.thisAssignments!.map((a: any) => a[1][1])
     )
     // Remove duplicate names
@@ -8874,7 +8874,7 @@ JSXChildExpression
     names = names.filter((name: string, i: number) => i is 0 or name !== names[i-1])
     d = {
       ...decl,
-      hoistDec: {
+      hoistDec: if names# then {
         type: "Declaration",
         children: [
           "let ",
@@ -8893,6 +8893,12 @@ JSXChildExpression
     else if d.splices?#
       (d.children as any[]).push(...d.splices)
     (d.children as any[]).push(",void 0")
+    unless decl.names
+      (d.children as any[]).push {
+        type: "Error"
+        message: "JSX declaration must declare identifiers"
+        $loc
+      } satisfies ASTError
     return d
   # NOTE: Using PostfixedExpressionOrCommaLoop to allow If/Switch expressions and postfixes
   Whitespace? ( DotDotDot Whitespace? )? PostfixedExpressionOrCommaLoop

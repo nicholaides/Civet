@@ -417,7 +417,9 @@ function processDeclarationConditionStatement(s: IfStatement | IterationStatemen
   // Move declaration to after the statement for until loops,
   // and for unless conditions with a guaranteed exit in the then clause.
   conditionExpression := condition.expression
-  blockPrefix := conditionExpression.blockPrefix if conditionExpression is like { blockPrefix }
+  // processDeclarationCondition attaches statement tuples here, unlike the
+  // single PostRestBindingElements node stored on array binding patterns.
+  { blockPrefix } := conditionExpression as { blockPrefix?: StatementTuple[] }
   if blockPrefix and
     s is like { negated: true } and
     (s.type is "IfStatement" and isExit(s.then) or
@@ -649,7 +651,7 @@ function dynamizeImportDeclaration(decl: ImportDeclaration)
     else
       convertNamedImportsToObject(imports, true)
   c := "const"
-  expression := [
+  expression: ASTNode := [
     if justDefault then "("
     {type: "Await", children: ["await"]}
     " "
@@ -672,7 +674,7 @@ function dynamizeImportDeclaration(decl: ImportDeclaration)
   if binding and specifiers
     // import x, {y} --> const ref = await import(...), x = ref.default, {y} = ref
     pattern2 := binding
-    exp2 := [
+    exp2: ASTNode := [
       pattern
       ".default"
     ]
