@@ -1678,7 +1678,7 @@ FieldDefinition
     // intact rather than emit invalid `Foo.prototype.#x = ...`.
     // The PrivateIdentifier rule normalises to type "Identifier"
     // with a `#`-prefixed name, so detect by name prefix.
-    if id is like { name } and id.name <? "string" and id.name.startsWith("#")
+    if id is like { name: /^#/ }
       return {
         type: "FieldDefinition"
         id

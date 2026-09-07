@@ -348,8 +348,7 @@ function patternAsValue(pattern: ASTNodeObject): ASTNodeObject
           assert.notEqual index, -1, "failed to find initializer in BindingElement"
           children.splice index, 1
         if value := pattern.value
-          children = children.map & is value ?
-            patternAsValue value : &
+          children = children.map & is value ? patternAsValue(value) : &
       { ...pattern, children }
     when "AtBindingProperty"
       children := [...pattern.children]
@@ -1216,7 +1215,7 @@ function processParams(f: FunctionNode): void
     } satisfies Declaration
   prefix ++= thisAssignments
   // Add indentation and delimiters
-  prefixStatements: StatementTuple[] := prefix.map (s) => s is like { js } and s.js
+  prefixStatements: StatementTuple[] := prefix.map (s) => s is like { js: true }
     ? ["", makeNode {
       // TODO: figure out how to get JS only statement tuples
       ...s
