@@ -99,6 +99,7 @@ import {
   isWhitespaceOrEmpty
   makeLeftHandSideExpression
   makeNode
+  namesOf
   replaceNode
   startsWithPredicate
   trimFirstSpace
@@ -974,7 +975,7 @@ function processParams(f: FunctionNode): void
     else
       append param
 
-  parameters.names = before.flatMap ("names" in & and &.names || [])
+  parameters.names = before.flatMap namesOf
   parameters.parameters[..] = []
   parameters.parameters.push tt if tt
   parameters.parameters.push ...before
@@ -982,7 +983,7 @@ function processParams(f: FunctionNode): void
     restIdentifier: ASTNode := (or)
       rest.binding.ref if "ref" in rest.binding
       rest.binding
-    parameters.names.push ...(rest.names ?? [])
+    parameters.names.push ...namesOf(rest)
     rest.children.pop() // remove delimiter
 
     // `(a, ...) ->` keeps the rest param to preserve the function's arity in
@@ -997,7 +998,7 @@ function processParams(f: FunctionNode): void
           message: "Non-end rest parameter cannot be binding pattern"
 
       after = trimFirstSpace after
-      names := after.flatMap ("names" in & and &.names || [])
+      names := after.flatMap namesOf
       elements := (after as (Parameter | ASTError)[]).map (p) =>
         return p if p.type is "Error"
         {

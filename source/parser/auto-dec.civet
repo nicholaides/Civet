@@ -13,6 +13,7 @@ import {
 
 import {
   isFunction
+  namesOf
 } from ./util.civet
 
 import {
@@ -41,8 +42,7 @@ function createConstLetDecs(statements: any, scopes: Set<any>[], letOrConst: "le
       else if node.type is "FunctionExpression"
         true
     .filter .type is "Declaration"
-    // The declarations matched above are `var` declarations, which have names.
-    .flatMap .names!
+    .flatMap namesOf
     new Set declarationNames
 
   declaredIdentifiers .= findVarDecs statements
@@ -123,7 +123,7 @@ function createConstLetDecs(statements: any, scopes: Set<any>[], letOrConst: "le
         continue
       // Synthetic assignments (such as a `do` expression's result ref) may
       // not introduce any source-level names.
-      names := ((node.names if "names" in node) ?? []).filter not hasDec .
+      names := namesOf(node).filter not hasDec .
       if node.type is "AssignmentExpression"
         undeclaredIdentifiers.push ...names
       for each name of names

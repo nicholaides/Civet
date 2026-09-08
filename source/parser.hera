@@ -6963,7 +6963,7 @@ ExportDeclaration
   Decorators? Export __ Default __ !FunctionDeclaration ( LexicalDeclaration / VariableStatement / TypeAliasDeclaration / NamespaceDeclaration / EnumDeclaration / OperatorDeclaration ):declaration ->
     let id, error
     if declaration.type is "Declaration"
-      names := declaration.names ?? []
+      names := namesOf(declaration)
       if names# !== 1
         error = {
           type: "Error",
@@ -8866,7 +8866,7 @@ JSXChildExpression
   Whitespace? LexicalDeclaration:d ->
     decl := d!
     // Add refs from thisAssignments to list of names
-    names .= (decl.names ?? []).concat(
+    names .= namesOf(decl).concat(
       decl.thisAssignments!.map((a: any) => a[1][1])
     )
     // Remove duplicate names

@@ -96,7 +96,7 @@ function adjustBindingElements(elements: ArrayBindingPatternContent): {
       rest.binding.ref if "ref" in rest.binding
       rest.binding
     /* fallback when rest binding is PinPattern or Literal (neither sets names); prevents crash in `[a, ...^x] .= arr` shape */
-    names.push ...rest.names or []
+    names.push ...namesOf(rest)
 
     l .= after#
 
