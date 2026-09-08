@@ -539,7 +539,7 @@ function assignResults(node: StatementTuple[] | ASTNode, collect: (node: ASTNode
   // Insert push wrapping expression
   node_1 := node[1]
   parent := node_1.parent if node_1 is like { parent }
-  node[1] = collect(node[1])
+  node[1] = collect(node_1)
   updateParentPointers parent if parent?
 
 // [indent, statement, semicolon]
@@ -609,9 +609,9 @@ function insertReturn(node: ASTNode): void
       else
         [] as ASTNode
 
-      assert (outer is like { parent }), "Delcaration must have a parent"
+      assert (outer is like { parent }), "Declaration must have a parent"
       { parent } := outer
-      assert "expressions" in parent?, "Delcaration parent must have an expression"
+      assert "expressions" in parent?, "Declaration parent must have an expression"
       { expressions } := parent
 
       index := findChildIndex expressions, outer

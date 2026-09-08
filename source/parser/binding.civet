@@ -345,7 +345,7 @@ function gatherBindingPatternTypeSuffix(pattern: ArrayBindingPattern | ObjectBin
           switch elem.type
             when "BindingElement", "BindingRestElement"
               { binding } := elem
-              typeSuffix ?= (binding.typeSuffix if "typeSuffix" in binding?)
+              typeSuffix ?= binding.typeSuffix if "typeSuffix" in binding?
           count++ if typeSuffix
           typeSuffix ?= typeSuffixForExpression trimFirstSpace initializer.expression if initializer?
           let delim: ASTNode?

@@ -36,10 +36,8 @@ function findDecs(statements: ASTNode)
 
 function createConstLetDecs(statements: any, scopes: Set<any>[], letOrConst: "let" | "const"): void
   function findVarDecs(statements: any): Set<string>
-    declarationNames := gatherRecursive statements, (node) => Boolean
-      (or)
-        node is like { type: "Declaration", children: [{ token: /^var/ }, ...]}
-        node.type is "FunctionExpression"
+    declarationNames := gatherRecursive statements,
+      (is like { type: "Declaration", children: [{ token: /^var/ }, ...]}, { type: "FunctionExpression" })
     .filter .type is "Declaration"
     .flatMap namesOf
     new Set declarationNames
@@ -134,9 +132,8 @@ function createConstLetDecs(statements: any, scopes: Set<any>[], letOrConst: "le
       firstIdentifier .= gatherNodes(statement[1], .type is "Identifier")[0]
       if (undeclaredIdentifiers# is 1
         and statement[1].type is "AssignmentExpression"
-        and statement[1].names# is 1
-        and statement[1].names[0] is undeclaredIdentifiers[0]
-        and firstIdentifier.names.join(',') is undeclaredIdentifiers[0]
+        and statement[1].names is like [^undeclaredIdentifiers[0]]
+        and firstIdentifier.names is like [^undeclaredIdentifiers[0]]
         and gatherNodes(statement[1], .type is "ObjectBindingPattern")# is 0)
         statement[1].children.unshift [`${letOrConst} `]
       else
