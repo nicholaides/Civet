@@ -207,7 +207,7 @@ function getPatternConditions(
   switch pattern.type
     when "ArrayBindingPattern"
       const { elements, length } = pattern,
-        hasRest = Boolean(pattern.omittedRest) or elements.some((e) => e.rest if "rest" in e),
+        hasRest = Boolean(pattern.omittedRest) or elements.some((e) => "rest" in e and e.rest),
         l = (length - +hasRest).toString(),
         lengthCheck = hasRest
         ? [ref, ".length >= ", l]
@@ -482,8 +482,8 @@ function aggregateDuplicateBindings(bindings: ASTNode)
 
     // This is to handle aliased props, non-aliased props, and binding identifiers in arrays
     key := (or)
-      value.name if "name" in value?
-      name.name if name is like { name }
+      "name" in value? and value.name
+      name is like { name } and name.name
       name
 
     if key is like { type } and key.type is like "NumericLiteral", "ComputedPropertyName"

@@ -980,7 +980,7 @@ function processParams(f: FunctionNode): void
   parameters.parameters.push ...before
   if rest
     restIdentifier: ASTNode := (or)
-      rest.binding.ref if "ref" in rest.binding
+      "ref" in rest.binding and rest.binding.ref
       rest.binding
     parameters.names.push ...namesOf(rest)
     rest.children.pop() // remove delimiter

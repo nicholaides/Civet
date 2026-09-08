@@ -93,7 +93,7 @@ function adjustBindingElements(elements: ArrayBindingPatternContent): {
     after := elements[restIndex + 1..]
 
     restIdentifier := (or)
-      rest.binding.ref if "ref" in rest.binding
+      "ref" in rest.binding and rest.binding.ref
       rest.binding
     /* fallback when rest binding is PinPattern or Literal (neither sets names); prevents crash in `[a, ...^x] .= arr` shape */
     names.push ...namesOf(rest)
@@ -246,8 +246,8 @@ function gatherBindingCode(statements: ASTNode, opts?: { injectParamProps?: bool
 
   function insertRestSplices(s: ASTNode, p: unknown[], thisAssignments: ThisAssignments): void
     for each let n of gatherRecursiveAll(s, (n) => Boolean (or)
-      n.blockPrefix if "blockPrefix" in n
-      opts?.injectParamProps and n.accessModifier if "accessModifier" in n
+      "blockPrefix" in n and n.blockPrefix
+      opts?.injectParamProps and "accessModifier" in n and n.accessModifier
       n.type is "AtBinding"
       opts?.assignPins and n.type is like "PinPattern", "PinProperty"
     )

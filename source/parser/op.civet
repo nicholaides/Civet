@@ -55,7 +55,7 @@ precedenceRelational := precedenceMap.get("==")!
 precedenceCustomDefault := precedenceMap.get("custom")!
 
 function getPrecedence(op: BinaryOp): number
-  return  precedenceRelational if op is like { type: "PatternTest" }
+  return precedenceRelational if op is like { type: "PatternTest" }
 
   prec := op.prec if op is like { prec }
 
