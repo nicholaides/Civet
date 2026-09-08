@@ -742,8 +742,6 @@ function dynamizeImportDeclarationExpression($0: [ASTNode, Whitespace, ASTNode, 
       parenthesizeExpression awaitExpression
     when "Declaration" // named imports
       object := convertNamedImportsToObject imports
-      // Type system disagress that object.type will always be "ObjectExpression"
-      assert object.type is "ObjectExpression", "convertNamedImportsToObject should have returned an ObjectExpression"
       processCallMemberExpression
         type: "CallExpression"
         children: []

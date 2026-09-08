@@ -1139,6 +1139,9 @@ function convertArrowFunctionToMethod(id: any, exp: any)
   exp
 
 // Convert NamedImports into equivalent ObjectExpression or ObjectBindingPattern
+function convertNamedImportsToObject(node: any, pattern?: false, kind?: "dynamic" | "destructuring"): ObjectExpression
+function convertNamedImportsToObject(node: any, pattern: true, kind?: "dynamic" | "destructuring"): ObjectBindingPattern
+function convertNamedImportsToObject(node: any, pattern?: boolean, kind?: "dynamic" | "destructuring"): ObjectExpression | ObjectBindingPattern
 function convertNamedImportsToObject(node: any, pattern?: boolean, kind: "dynamic" | "destructuring" = "dynamic"): ObjectExpression | ObjectBindingPattern
   properties := node.specifiers.map (specifier: any) =>
     if specifier.ts
