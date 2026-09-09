@@ -17,7 +17,6 @@ import {
 } from ./traversal.civet
 
 import {
-  assert
   hasAwait
   makeNode
   wrapIIFE
@@ -82,9 +81,8 @@ function runComptime(statements: StatementTuple[]): unknown[]
     let output: unknown, context: NodeJS.Dict<unknown>, contextGlobal?: NodeJS.Dict<unknown>
     try
       context = vm.createContext?() ?? globalThis
-      originalFilename := getFilename()
-      assert originalFilename <? "string", "runComptime: name of parsed file must be a string"
-      filename := context.__filename = resolve originalFilename
+      filename := context.__filename = resolve getFilename() ??
+        throw new TypeError "runComptime: name of parsed file must be a string"
       context.__dirname = dirname filename
       context.require = createRequire filename
       if vm.runInContext?
