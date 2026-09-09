@@ -148,17 +148,17 @@ function runComptime(statements: StatementTuple[]): unknown[]
 function serialize(value: ???, context?: NodeJS.Dict<any>): string
   stack := new Set<object>
   function recurse(val: ???): string
-    switch typeof val
-      when "string"
+    switch val
+      <? "string"
         // Using JSON.stringify to handle escape sequences
         JSON.stringify val
-      when "number"
+      <? "number"
         if Object.is -0, val then '-0' else val.toString()
-      when "boolean", "undefined"
-        String val // not toString to accomodate undefined
-      when "bigint"
+      <? "boolean", == null
+        String val // not toString to accomodate null/undefined
+      <? "bigint"
         `${val}n`
-      when "function"
+      <? "function"
         // Some functions can actually be serialized
         string .= Function::toString.call val
         if /\{\s+\[native code]\s+\}$/.test string
@@ -209,7 +209,7 @@ function serialize(value: ???, context?: NodeJS.Dict<any>): string
 
         stack.delete val
         string
-      when "symbol"
+      <? "symbol"
         if key? := Symbol.keyFor val
           return `Symbol.for(${JSON.stringify key})`
         // Handle well-known symbols
@@ -219,8 +219,7 @@ function serialize(value: ???, context?: NodeJS.Dict<any>): string
           if val is sym
             return `Symbol.${name}`
         throw new TypeError "cannot serialize unique symbol"
-      when "object"
-        return "null" if val === null
+      <? "object"
         if stack.has val
           throw new Error "circular reference detected"
         stack.add val
@@ -292,8 +291,11 @@ function serialize(value: ???, context?: NodeJS.Dict<any>): string
         stack.delete val
         /* c8 ignore next -- c8 sourcemap doesn't attribute the compiled `return str` to this line */
         str
+      else
+        throw new TypeError `cannot serialize ${typeof val} value`
 
   recurse value
+
 
 export {
   expressionizeComptime
