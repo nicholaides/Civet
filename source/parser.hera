@@ -5442,6 +5442,7 @@ IterationExpression
     return {
       type: "IterationExpression",
       subtype: statement.type,
+      resultsRef: undefined,
       children: [statement],
       block: statement.block,
       statement,
